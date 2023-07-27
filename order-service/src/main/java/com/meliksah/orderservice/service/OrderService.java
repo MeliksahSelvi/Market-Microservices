@@ -1,5 +1,6 @@
 package com.meliksah.orderservice.service;
 
+import com.meliksah.orderservice.dto.InventoryResponse;
 import com.meliksah.orderservice.dto.OrderLineItemDto;
 import com.meliksah.orderservice.dto.OrderRequestDto;
 import com.meliksah.orderservice.dto.OrderResponseDto;
@@ -10,7 +11,9 @@ import com.meliksah.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,8 +28,13 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final WebClient webClient;
 
     public OrderResponseDto placeOrder(OrderRequestDto orderRequestDto) {
+
+        InventoryResponse[] inventoryResponses = accessInventoryService(orderRequestDto);
+
+        checkAllProductIsInStock(inventoryResponses);
 
         Order order = createOrder(orderRequestDto);
 
@@ -36,13 +44,25 @@ public class OrderService {
         return orderResponseDto;
     }
 
-    private OrderResponseDto createOrderResponseDto(Order order) {
-        List<OrderLineItemDto> orderLineItemDtoList = OrderLineItemMapper.INSTANCE.orderLineItemListToOrderLineItemDtoList(order.getOrderLineItemList());
+    private InventoryResponse[] accessInventoryService(OrderRequestDto orderRequestDto) {
 
-        OrderResponseDto orderResponseDto = new OrderResponseDto();
-        orderResponseDto.setOrderNumber(order.getOrderNumber());
-        orderResponseDto.setOrderLineItemsList(orderLineItemDtoList);
-        return orderResponseDto;
+        List<String> skuCodeList = orderRequestDto.getOrderLineItemDtoList().stream().map(OrderLineItemDto::getSkuCode).toList();
+
+        InventoryResponse[] inventoryResponses = webClient.get()
+                .uri("http://localhost:8082/api/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodeList).build())
+                .retrieve()
+                .bodyToMono(InventoryResponse[].class)
+                .block();//default olarak webclient asynchronous çalışıyor biz block methodu ile synchronous çalışmasını sağladık.
+        return inventoryResponses;
+    }
+
+    private void checkAllProductIsInStock(InventoryResponse[] inventoryResponses) {
+        boolean allProductIsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::isInStock);
+
+        if (Boolean.FALSE.equals(allProductIsInStock)) {
+            throw new RuntimeException("Products are not in stock,please check your Order");//TODO exception özelleştirilebilir.
+        }
     }
 
     private Order createOrder(OrderRequestDto orderRequestDto) {
@@ -57,5 +77,14 @@ public class OrderService {
 
     private String getRandomUUID() {
         return UUID.randomUUID().toString();
+    }
+
+    private OrderResponseDto createOrderResponseDto(Order order) {
+        List<OrderLineItemDto> orderLineItemDtoList = OrderLineItemMapper.INSTANCE.orderLineItemListToOrderLineItemDtoList(order.getOrderLineItemList());
+
+        OrderResponseDto orderResponseDto = new OrderResponseDto();
+        orderResponseDto.setOrderNumber(order.getOrderNumber());
+        orderResponseDto.setOrderLineItemsList(orderLineItemDtoList);
+        return orderResponseDto;
     }
 }
