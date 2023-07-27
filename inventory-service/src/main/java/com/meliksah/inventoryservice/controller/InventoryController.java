@@ -1,9 +1,12 @@
 package com.meliksah.inventoryservice.controller;
 
+import com.meliksah.inventoryservice.dto.InventoryResponse;
 import com.meliksah.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * @Author mselvi
@@ -17,10 +20,10 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    @GetMapping("/{skuCode}")
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public boolean isInStock(@PathVariable String skuCode){
-        boolean isInStock=inventoryService.isInStock(skuCode);
-        return isInStock;
+    public List<InventoryResponse> getInventoryResponsesBySkuCodes(@RequestParam List<String> skuCodeList) {
+        List<InventoryResponse> inventoryListBySkuCodeList = inventoryService.getInventoryListBySkuCodeList(skuCodeList);
+        return inventoryListBySkuCodeList;
     }
 }

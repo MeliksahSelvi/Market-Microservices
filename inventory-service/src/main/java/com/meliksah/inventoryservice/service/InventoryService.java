@@ -1,9 +1,12 @@
 package com.meliksah.inventoryservice.service;
 
+import com.meliksah.inventoryservice.dto.InventoryResponse;
 import com.meliksah.inventoryservice.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * @Author mselvi
@@ -17,7 +20,13 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
 
     @Transactional(readOnly = true)
-    public boolean isInStock(String skuCode) {
-        return inventoryRepository.findBySkuCode(skuCode).isPresent();
+    public List<InventoryResponse> getInventoryListBySkuCodeList(List<String> skuCodeList) {
+        return inventoryRepository.findBySkuCodeIn(skuCodeList).stream()
+                .map(inventory ->
+                        InventoryResponse.builder()
+                                .skuCode(inventory.getSkuCode())
+                                .isInStock(inventory.getAmount() > 0)
+                                .build()
+                ).toList();
     }
 }
