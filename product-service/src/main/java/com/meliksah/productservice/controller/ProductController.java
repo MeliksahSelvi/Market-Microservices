@@ -2,6 +2,7 @@ package com.meliksah.productservice.controller;
 
 import com.meliksah.productservice.dto.ProductRequestDto;
 import com.meliksah.productservice.dto.ProductResponseDto;
+import com.meliksah.productservice.dto.RestResponse;
 import com.meliksah.productservice.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,16 +24,16 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductResponseDto create(@RequestBody ProductRequestDto productRequestDto) {
+    public RestResponse create(@RequestBody ProductRequestDto productRequestDto) {
         ProductResponseDto responseDto = productService.createProduct(productRequestDto);
-        return responseDto;
+        return RestResponse.of(responseDto);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductResponseDto> getAll(){
+    public RestResponse getAll(){
         List<ProductResponseDto> responseDtoList=productService.getAll();
-        return responseDtoList;
+        return RestResponse.of(responseDtoList);
     }
 
 
