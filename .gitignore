@@ -2,3 +2,5 @@
 /inventory-service/target/
 /order-service/target/
 /product-service/target/
+/discovery-server/target/
+/api-gateway/target/
