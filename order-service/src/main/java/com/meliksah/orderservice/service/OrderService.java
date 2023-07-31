@@ -4,7 +4,6 @@ import com.meliksah.orderservice.dto.InventoryResponse;
 import com.meliksah.orderservice.dto.OrderLineItemDto;
 import com.meliksah.orderservice.dto.OrderRequestDto;
 import com.meliksah.orderservice.dto.OrderResponseDto;
-import com.meliksah.orderservice.mapper.OrderLineItemMapper;
 import com.meliksah.orderservice.model.Order;
 import com.meliksah.orderservice.model.OrderLineItem;
 import com.meliksah.orderservice.repository.OrderRepository;
@@ -67,7 +66,8 @@ public class OrderService {
 
     private Order createOrder(OrderRequestDto orderRequestDto) {
         String randomUUID = getRandomUUID();
-        List<OrderLineItem> orderLineItemsList = OrderLineItemMapper.INSTANCE.orderLineItemDtoListToOrderLineItemList(orderRequestDto.getOrderLineItemDtoList());
+        List<OrderLineItem> orderLineItemsList = orderRequestDto.getOrderLineItemDtoList().stream()
+                .map(this::convertDtoToModel).toList();
 
         Order order = new Order();
         order.setOrderNumber(randomUUID);
@@ -75,16 +75,35 @@ public class OrderService {
         return order;
     }
 
+    private OrderLineItem convertDtoToModel(OrderLineItemDto orderLineItemDto){
+        OrderLineItem orderLineItem=new OrderLineItem();
+        orderLineItem.setId(orderLineItemDto.getId());
+        orderLineItem.setAmount(orderLineItemDto.getAmount());
+        orderLineItem.setPrice(orderLineItemDto.getPrice());
+        orderLineItem.setSkuCode(orderLineItemDto.getSkuCode());
+        return orderLineItem;
+    }
+
     private String getRandomUUID() {
         return UUID.randomUUID().toString();
     }
 
     private OrderResponseDto createOrderResponseDto(Order order) {
-        List<OrderLineItemDto> orderLineItemDtoList = OrderLineItemMapper.INSTANCE.orderLineItemListToOrderLineItemDtoList(order.getOrderLineItemList());
+        List<OrderLineItemDto> orderLineItemDtoList = order.getOrderLineItemList().stream()
+                .map(this::convertModelToDto).toList();
 
         OrderResponseDto orderResponseDto = new OrderResponseDto();
         orderResponseDto.setOrderNumber(order.getOrderNumber());
         orderResponseDto.setOrderLineItemsList(orderLineItemDtoList);
         return orderResponseDto;
+    }
+
+    private OrderLineItemDto convertModelToDto(OrderLineItem orderLineItem){
+        OrderLineItemDto orderLineItemDto=new OrderLineItemDto();
+        orderLineItemDto.setId(orderLineItem.getId());
+        orderLineItemDto.setAmount(orderLineItem.getAmount());
+        orderLineItemDto.setPrice(orderLineItem.getPrice());
+        orderLineItemDto.setSkuCode(orderLineItem.getSkuCode());
+        return orderLineItemDto;
     }
 }

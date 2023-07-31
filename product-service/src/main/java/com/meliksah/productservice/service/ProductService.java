@@ -2,7 +2,6 @@ package com.meliksah.productservice.service;
 
 import com.meliksah.productservice.dto.ProductRequestDto;
 import com.meliksah.productservice.dto.ProductResponseDto;
-import com.meliksah.productservice.mapper.ProductMapper;
 import com.meliksah.productservice.model.Product;
 import com.meliksah.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,21 +25,38 @@ public class ProductService {
 
     public ProductResponseDto createProduct(ProductRequestDto productRequestDto) {
 
-        Product product = ProductMapper.INSTANCE.productRequestDtoToProduct(productRequestDto);
+        Product product = convertDtoToModel(productRequestDto);
 
         product = productRepository.save(product);
 
         logger.info("Product {} is saved", product.getId());
 
-        ProductResponseDto responseDto = ProductMapper.INSTANCE.productToProductResponseDto(product);
+        ProductResponseDto responseDto = convertModelToDto(product);
 
         return responseDto;
+    }
+
+    private Product convertDtoToModel(ProductRequestDto productRequestDto) {
+        Product product = new Product();
+        product.setPrice(productRequestDto.getPrice());
+        product.setName(productRequestDto.getName());
+        product.setDescription(productRequestDto.getDescription());
+        return product;
+    }
+
+    private ProductResponseDto convertModelToDto(Product product) {
+        ProductResponseDto productResponseDto = new ProductResponseDto();
+        productResponseDto.setId(product.getId());
+        productResponseDto.setPrice(product.getPrice());
+        productResponseDto.setName(product.getName());
+        productResponseDto.setDescription(product.getDescription());
+        return productResponseDto;
     }
 
     public List<ProductResponseDto> getAll() {
         List<Product> allProduct = productRepository.findAll();
 
-        List<ProductResponseDto> responseDtoList = ProductMapper.INSTANCE.productListToProductResponseDtoList(allProduct);
+        List<ProductResponseDto> responseDtoList = allProduct.stream().map(this::convertModelToDto).toList();
         return responseDtoList;
     }
 
