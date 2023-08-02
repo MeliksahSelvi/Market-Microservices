@@ -4,10 +4,12 @@ import com.meliksah.orderservice.dto.InventoryResponse;
 import com.meliksah.orderservice.dto.OrderLineItemDto;
 import com.meliksah.orderservice.dto.OrderRequestDto;
 import com.meliksah.orderservice.dto.OrderResponseDto;
+import com.meliksah.orderservice.event.OrderPlacedEvent;
 import com.meliksah.orderservice.model.Order;
 import com.meliksah.orderservice.model.OrderLineItem;
 import com.meliksah.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,6 +30,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     public OrderResponseDto placeOrder(OrderRequestDto orderRequestDto) {
 
@@ -39,6 +42,8 @@ public class OrderService {
 
         order = orderRepository.save(order);
 
+        kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
+
         OrderResponseDto orderResponseDto = createOrderResponseDto(order);
         return orderResponseDto;
     }
@@ -49,7 +54,7 @@ public class OrderService {
 
         InventoryResponse[] inventoryResponses = webClientBuilder.build().get()
                 .uri("http://inventory-service/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodeList).build())
+                        uriBuilder -> uriBuilder.queryParam("skuCodeList", skuCodeList).build())
                 .retrieve()
                 .bodyToMono(InventoryResponse[].class)
                 .block();//default olarak webclient asynchronous çalışıyor biz block methodu ile synchronous çalışmasını sağladık.
@@ -75,8 +80,8 @@ public class OrderService {
         return order;
     }
 
-    private OrderLineItem convertDtoToModel(OrderLineItemDto orderLineItemDto){
-        OrderLineItem orderLineItem=new OrderLineItem();
+    private OrderLineItem convertDtoToModel(OrderLineItemDto orderLineItemDto) {
+        OrderLineItem orderLineItem = new OrderLineItem();
         orderLineItem.setId(orderLineItemDto.getId());
         orderLineItem.setAmount(orderLineItemDto.getAmount());
         orderLineItem.setPrice(orderLineItemDto.getPrice());
@@ -98,8 +103,8 @@ public class OrderService {
         return orderResponseDto;
     }
 
-    private OrderLineItemDto convertModelToDto(OrderLineItem orderLineItem){
-        OrderLineItemDto orderLineItemDto=new OrderLineItemDto();
+    private OrderLineItemDto convertModelToDto(OrderLineItem orderLineItem) {
+        OrderLineItemDto orderLineItemDto = new OrderLineItemDto();
         orderLineItemDto.setId(orderLineItem.getId());
         orderLineItemDto.setAmount(orderLineItem.getAmount());
         orderLineItemDto.setPrice(orderLineItem.getPrice());
