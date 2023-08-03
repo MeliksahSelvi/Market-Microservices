@@ -30,14 +30,14 @@ public class RestResponse<T> {
 
 
     public static <T> RestResponse of(T t){
-        return new RestResponse(t,true);
+        return new RestResponse<T>(t,true);
     }
 
     public static <T> RestResponse empty(){
-        return new RestResponse(null,true);
+        return new RestResponse<T>(null,true);
     }
 
     public static <T> RestResponse error(T t,String messages){
-        return new RestResponse(t,false,messages);
+        return new RestResponse<T>(t,false,messages);
     }
 }
