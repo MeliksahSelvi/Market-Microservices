@@ -16,7 +16,7 @@ services:
     ports:
       - "5431:5431"
     command: -p 5431
-    restart: always
+    restart: unless-stopped
 
   postgres-inventory:
     container_name: postgres-inventory
@@ -31,12 +31,12 @@ services:
     ports:
       - "5432:5432"
     command: -p 5432
-    restart: always
+    restart: unless-stopped
 
   mongo:
     container_name: mongo
     image: mongo:4.4.14-rc0-focal
-    restart: always
+    restart: unless-stopped
     expose:
       - "27017"
     ports:
@@ -59,7 +59,7 @@ services:
     ports:
       - "5433:5433"
     command: -p 5433
-    restart: always
+    restart: unless-stopped
 
   keycloak:
     container_name: keycloak
@@ -181,3 +181,31 @@ services:
       - kafka
       - discovery-server
       - api-gateway
+
+  prometheus:
+    image: prom/prometheus:v2.37.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - product-service
+      - inventory-service
+      - order-service
+      - notification-service
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
