@@ -6,3 +6,7 @@
 /api-gateway/target/
 /notification-service/target
 /.idea
+/postgres-inventory
+/postgres-keycloak
+/postgres-order
+/mongo-data
