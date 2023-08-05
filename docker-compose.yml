@@ -185,7 +185,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.37.1
     container_name: prometheus
-    restart: always
+    restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
@@ -199,7 +199,7 @@ services:
   grafana:
     image: grafana/grafana-oss:8.5.2
     container_name: grafana
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:3000"
     links:
