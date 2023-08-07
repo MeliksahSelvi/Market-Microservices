@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,10 +33,16 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     public CompletableFuture<RestResponse> placeOrder(@RequestBody OrderRequestDto orderRequestDto) {
         OrderResponseDto orderResponseDto = orderService.placeOrder(orderRequestDto);
-        return CompletableFuture.supplyAsync(()->RestResponse.of(orderResponseDto));
+        return CompletableFuture.supplyAsync(() -> RestResponse.of(orderResponseDto));
     }
 
     public CompletableFuture<RestResponse> placeOrderFallbackMethod(OrderRequestDto orderRequestDto, RuntimeException runtimeException) {
-        return CompletableFuture.supplyAsync(()->RestResponse.of("Ooops! Something went wrong, please order after some time!"));
+        return CompletableFuture.supplyAsync(() -> RestResponse.of("Ooops! Something went wrong, please order after some time!"));
+    }
+
+    @GetMapping
+    public RestResponse getAllOrder(){
+        List<OrderResponseDto> orderResponseDtoList=orderService.getAll();
+        return RestResponse.of(orderResponseDtoList);
     }
 }

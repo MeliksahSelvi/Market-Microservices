@@ -24,7 +24,7 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
-    @Value("${market.kafka.address}")
+    @Value("${market.kafka.address.producer}")
     private String kafkaAddress;
 
     @Bean

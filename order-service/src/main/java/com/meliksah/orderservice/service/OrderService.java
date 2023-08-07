@@ -9,6 +9,7 @@ import com.meliksah.orderservice.model.Order;
 import com.meliksah.orderservice.model.OrderLineItem;
 import com.meliksah.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@Slf4j
 @RequiredArgsConstructor
 public class OrderService {
 
@@ -110,5 +112,13 @@ public class OrderService {
         orderLineItemDto.setPrice(orderLineItem.getPrice());
         orderLineItemDto.setSkuCode(orderLineItem.getSkuCode());
         return orderLineItemDto;
+    }
+
+    public List<OrderResponseDto> getAll() {
+        List<Order> orderList = orderRepository.findAll();
+
+        log.info("Fetch All Order");
+        List<OrderResponseDto> orderResponseDtoList = orderList.stream().map(this::createOrderResponseDto).toList();
+        return orderResponseDtoList;
     }
 }
