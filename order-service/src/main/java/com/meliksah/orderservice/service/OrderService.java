@@ -40,7 +40,9 @@ public class OrderService {
 
         checkAllProductIsInStock(inventoryResponses);
 
-        Order order = createOrder(orderRequestDto);
+        List<OrderLineItem> orderLineItemsList = getOrderLineItemList(orderRequestDto);
+
+        Order order = createOrder(orderLineItemsList);
 
         order = orderRepository.save(order);
 
@@ -52,7 +54,7 @@ public class OrderService {
 
     private InventoryResponse[] accessInventoryService(OrderRequestDto orderRequestDto) {
 
-        List<String> skuCodeList = orderRequestDto.getOrderLineItemDtoList().stream().map(OrderLineItemDto::getSkuCode).toList();
+        List<String> skuCodeList = getSkuCodeList(orderRequestDto);
 
         InventoryResponse[] inventoryResponses = webClientBuilder.build().get()
                 .uri("http://inventory-service/api/inventory",
@@ -63,6 +65,11 @@ public class OrderService {
         return inventoryResponses;
     }
 
+    private List<String> getSkuCodeList(OrderRequestDto orderRequestDto) {
+        List<String> skuCodeList = orderRequestDto.getOrderLineItemDtoList().stream().map(OrderLineItemDto::getSkuCode).toList();
+        return skuCodeList;
+    }
+
     private void checkAllProductIsInStock(InventoryResponse[] inventoryResponses) {
         boolean allProductIsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::isInStock);
 
@@ -71,15 +78,10 @@ public class OrderService {
         }
     }
 
-    private Order createOrder(OrderRequestDto orderRequestDto) {
-        String randomUUID = getRandomUUID();
+    private List<OrderLineItem> getOrderLineItemList(OrderRequestDto orderRequestDto) {
         List<OrderLineItem> orderLineItemsList = orderRequestDto.getOrderLineItemDtoList().stream()
                 .map(this::convertDtoToModel).toList();
-
-        Order order = new Order();
-        order.setOrderNumber(randomUUID);
-        order.setOrderLineItemList(orderLineItemsList);
-        return order;
+        return orderLineItemsList;
     }
 
     private OrderLineItem convertDtoToModel(OrderLineItemDto orderLineItemDto) {
@@ -91,18 +93,31 @@ public class OrderService {
         return orderLineItem;
     }
 
+    private Order createOrder(List<OrderLineItem> orderLineItemsList) {
+        String orderNumber = getRandomUUID();
+        Order order = new Order();
+        order.setOrderNumber(orderNumber);
+        order.setOrderLineItemList(orderLineItemsList);
+        return order;
+    }
+
     private String getRandomUUID() {
         return UUID.randomUUID().toString();
     }
 
     private OrderResponseDto createOrderResponseDto(Order order) {
-        List<OrderLineItemDto> orderLineItemDtoList = order.getOrderLineItemList().stream()
-                .map(this::convertModelToDto).toList();
+        List<OrderLineItemDto> orderLineItemDtoList = getOrderLineItemDtoList(order);
 
         OrderResponseDto orderResponseDto = new OrderResponseDto();
         orderResponseDto.setOrderNumber(order.getOrderNumber());
         orderResponseDto.setOrderLineItemsList(orderLineItemDtoList);
         return orderResponseDto;
+    }
+
+    private List<OrderLineItemDto> getOrderLineItemDtoList(Order order) {
+        List<OrderLineItemDto> orderLineItemDtoList = order.getOrderLineItemList().stream()
+                .map(this::convertModelToDto).toList();
+        return orderLineItemDtoList;
     }
 
     private OrderLineItemDto convertModelToDto(OrderLineItem orderLineItem) {
